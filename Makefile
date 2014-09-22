@@ -26,7 +26,7 @@ cubism.v1.js: \
 
 %.min.js: %.js Makefile
 	@rm -f $@
-	$(JS_COMPILER) < $< > $@
+	$(JS_COMPILER) -o $@ $<
 
 %.js:
 	@rm -f $@

@@ -14,7 +14,7 @@ cubism_contextPrototype.axis = function() {
 
     var g = selection.append("svg")
         .datum({id: id})
-        .attr("width", context.size())
+        .attr("width", context.size() * context.unitSize())
         .attr("height", Math.max(28, -axis.tickSize()))
       .append("g")
         .attr("transform", "translate(0," + (axis_.orient() === "top" ? 27 : 4) + ")")
@@ -33,7 +33,7 @@ cubism_contextPrototype.axis = function() {
           tick.style("display", "none");
           g.selectAll("text").style("fill-opacity", null);
         } else {
-          tick.style("display", null).attr("x", i).text(format(scale.invert(i)));
+          tick.style("display", null).attr("x", i).text(format(scale.invert(i - (i % context.unitSize()))));
           var dx = tick.node().getComputedTextLength() + 6;
           g.selectAll("text").style("fill-opacity", function(d) { return Math.abs(scale(d) - i) < dx ? 0 : 1; });
         }
@@ -69,5 +69,5 @@ cubism_contextPrototype.axis = function() {
 };
 
 var cubism_axisFormatSeconds = d3.time.format("%I:%M:%S %p"),
-    cubism_axisFormatMinutes = d3.time.format("%I:%M %p"),
+    cubism_axisFormatMinutes = d3.time.format("%b %d, %I:%M %p"),
     cubism_axisFormatDays = d3.time.format("%B %d");

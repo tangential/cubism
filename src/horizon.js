@@ -2,7 +2,8 @@ cubism_contextPrototype.horizon = function() {
   var context = this,
       mode = "offset",
       buffer = document.createElement("canvas"),
-      width = buffer.width = context.size(),
+      barWidth = 1,
+      width = buffer.width = context.size()*barWidth,
       height = buffer.height = 30,
       scale = d3.scale.linear().interpolate(d3.interpolateRound),
       metric = cubism_identity,
@@ -92,7 +93,7 @@ cubism_contextPrototype.horizon = function() {
             y1 = metric_.valueAt(i);
             if (y1 <= 0) { negative = true; continue; }
             if (y1 === undefined) continue;
-            canvas.fillRect(i, y1 = scale(y1), 1, y0 - y1);
+            canvas.fillRect(i * barWidth, y1 = scale(y1), barWidth, y0 - y1);
           }
         }
 
@@ -115,7 +116,7 @@ cubism_contextPrototype.horizon = function() {
             for (var i = i0, n = width, y1; i < n; ++i) {
               y1 = metric_.valueAt(i);
               if (y1 >= 0) continue;
-              canvas.fillRect(i, scale(-y1), 1, y0 - scale(-y1));
+              canvas.fillRect(i * barWidth, scale(-y1), barWidth, y0 - scale(-y1));
             }
           }
         }
@@ -125,6 +126,7 @@ cubism_contextPrototype.horizon = function() {
 
       function focus(i) {
         if (i == null) i = width - 1;
+        i = Math.floor(i / barWidth);
         var value = metric_.valueAt(i);
         span.datum(value).text(isNaN(value) ? null : format);
       }
@@ -211,6 +213,13 @@ cubism_contextPrototype.horizon = function() {
     colors = _;
     return horizon;
   };
+
+  horizon.barWidth = function(_) {
+    if (!arguments.length) return barWidth;
+    barWidth = _;
+    width = buffer.width = context.size() * barWidth;
+    return horizon;
+  }
 
   return horizon;
 };

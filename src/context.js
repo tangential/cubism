@@ -2,12 +2,13 @@ cubism.context = function() {
   var context = new cubism_context,
       step = 1e4, // ten seconds, in milliseconds
       size = 1440, // four hours at ten seconds, in pixels
+      unitSize = 1,
       start0, stop0, // the start and stop for the previous change event
       start1, stop1, // the start and stop for the next prepare event
       serverDelay = 5e3,
       clientDelay = 5e3,
       event = d3.dispatch("prepare", "beforechange", "change", "focus"),
-      scale = context.scale = d3.time.scale().range([0, size]),
+      scale = context.scale = d3.time.scale().range([0, size * unitSize]),
       timeout,
       focus;
 
@@ -67,6 +68,13 @@ cubism.context = function() {
     scale.range([0, size = +_]);
     return update();
   };
+
+  context.unitSize = function(_) {
+    if (!arguments.length) return unitSize;
+    unitSize = _;
+    scale.range([0, size * unitSize]);
+    return update();
+  }
 
   // The server delay is the amount of time we wait for the server to compute a
   // metric. This delay may result from clock skew or from delays collecting

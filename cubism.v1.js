@@ -24,12 +24,13 @@ cubism.context = function() {
   var context = new cubism_context,
       step = 1e4, // ten seconds, in milliseconds
       size = 1440, // four hours at ten seconds, in pixels
+      unitSize = 1,
       start0, stop0, // the start and stop for the previous change event
       start1, stop1, // the start and stop for the next prepare event
       serverDelay = 5e3,
       clientDelay = 5e3,
       event = d3.dispatch("prepare", "beforechange", "change", "focus"),
-      scale = context.scale = d3.time.scale().range([0, size]),
+      scale = context.scale = d3.time.scale().range([0, size * unitSize]),
       timeout,
       focus;
 
@@ -89,6 +90,13 @@ cubism.context = function() {
     scale.range([0, size = +_]);
     return update();
   };
+
+  context.unitSize = function(_) {
+    if (!arguments.length) return unitSize;
+    unitSize = _;
+    scale.range([0, size * unitSize]);
+    return update();
+  }
 
   // The server delay is the amount of time we wait for the server to compute a
   // metric. This delay may result from clock skew or from delays collecting
@@ -736,7 +744,8 @@ cubism_contextPrototype.horizon = function() {
   var context = this,
       mode = "offset",
       buffer = document.createElement("canvas"),
-      width = buffer.width = context.size(),
+      barWidth = 1,
+      width = buffer.width = context.size()*barWidth,
       height = buffer.height = 30,
       scale = d3.scale.linear().interpolate(d3.interpolateRound),
       metric = cubism_identity,
@@ -826,7 +835,7 @@ cubism_contextPrototype.horizon = function() {
             y1 = metric_.valueAt(i);
             if (y1 <= 0) { negative = true; continue; }
             if (y1 === undefined) continue;
-            canvas.fillRect(i, y1 = scale(y1), 1, y0 - y1);
+            canvas.fillRect(i * barWidth, y1 = scale(y1), barWidth, y0 - y1);
           }
         }
 
@@ -849,7 +858,7 @@ cubism_contextPrototype.horizon = function() {
             for (var i = i0, n = width, y1; i < n; ++i) {
               y1 = metric_.valueAt(i);
               if (y1 >= 0) continue;
-              canvas.fillRect(i, scale(-y1), 1, y0 - scale(-y1));
+              canvas.fillRect(i * barWidth, scale(-y1), barWidth, y0 - scale(-y1));
             }
           }
         }
@@ -859,6 +868,7 @@ cubism_contextPrototype.horizon = function() {
 
       function focus(i) {
         if (i == null) i = width - 1;
+        i = Math.floor(i / barWidth);
         var value = metric_.valueAt(i);
         span.datum(value).text(isNaN(value) ? null : format);
       }
@@ -945,6 +955,13 @@ cubism_contextPrototype.horizon = function() {
     colors = _;
     return horizon;
   };
+
+  horizon.barWidth = function(_) {
+    if (!arguments.length) return barWidth;
+    barWidth = _;
+    width = buffer.width = context.size() * barWidth;
+    return horizon;
+  }
 
   return horizon;
 };
@@ -1194,7 +1211,7 @@ cubism_contextPrototype.axis = function() {
 
     var g = selection.append("svg")
         .datum({id: id})
-        .attr("width", context.size())
+        .attr("width", context.size() * context.unitSize())
         .attr("height", Math.max(28, -axis.tickSize()))
       .append("g")
         .attr("transform", "translate(0," + (axis_.orient() === "top" ? 27 : 4) + ")")
@@ -1213,7 +1230,7 @@ cubism_contextPrototype.axis = function() {
           tick.style("display", "none");
           g.selectAll("text").style("fill-opacity", null);
         } else {
-          tick.style("display", null).attr("x", i).text(format(scale.invert(i)));
+          tick.style("display", null).attr("x", i).text(format(scale.invert(i - (i % context.unitSize()))));
           var dx = tick.node().getComputedTextLength() + 6;
           g.selectAll("text").style("fill-opacity", function(d) { return Math.abs(scale(d) - i) < dx ? 0 : 1; });
         }
@@ -1249,7 +1266,7 @@ cubism_contextPrototype.axis = function() {
 };
 
 var cubism_axisFormatSeconds = d3.time.format("%I:%M:%S %p"),
-    cubism_axisFormatMinutes = d3.time.format("%I:%M %p"),
+    cubism_axisFormatMinutes = d3.time.format("%b %d, %I:%M %p"),
     cubism_axisFormatDays = d3.time.format("%B %d");
 cubism_contextPrototype.rule = function() {
   var context = this,
